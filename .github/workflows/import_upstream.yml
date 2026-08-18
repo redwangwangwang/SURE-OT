@@ -1,0 +1,58 @@
+name: Import BiOTPrompt upstream
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - .github/workflows/import_upstream.yml
+
+permissions:
+  contents: write
+
+jobs:
+  import-upstream:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out target repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Replace stub tree with the complete upstream repository
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          tmp_dir="$(mktemp -d)"
+          git clone --depth 1 https://github.com/TengfeiLiu966/BiOTPrompt.git "${tmp_dir}/upstream"
+
+          # Remove the old stub contents while preserving this checkout's .git data.
+          find . -mindepth 1 -maxdepth 1 \
+            ! -name '.git' \
+            ! -name '.github' \
+            -exec rm -rf {} +
+
+          # Copy every upstream file, including the metric JARs and image assets.
+          rsync -a --delete \
+            --exclude='.git/' \
+            --exclude='.github/workflows/import_upstream.yml' \
+            "${tmp_dir}/upstream/" ./
+
+          # The bootstrap workflow is intentionally one-shot and is removed from
+          # the imported tree so the final repository remains clean.
+          rm -f .github/workflows/import_upstream.yml
+          rmdir .github/workflows 2>/dev/null || true
+          rmdir .github 2>/dev/null || true
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+
+          if git diff --cached --quiet; then
+            echo "No import changes detected."
+            exit 0
+          fi
+
+          git commit -m "chore: import complete BiOTPrompt upstream"
+          git push origin HEAD:main
