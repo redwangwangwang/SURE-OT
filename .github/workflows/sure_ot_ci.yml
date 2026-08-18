@@ -1,0 +1,39 @@
+name: SURE-OT unit tests
+
+on:
+  push:
+    paths:
+      - "evalcap/SURE_OT.py"
+      - "models/R2GenGPT.py"
+      - "configs/config.py"
+      - "tests/**"
+      - ".github/workflows/sure_ot_ci.yml"
+  pull_request:
+    paths:
+      - "evalcap/SURE_OT.py"
+      - "models/R2GenGPT.py"
+      - "configs/config.py"
+      - "tests/**"
+      - ".github/workflows/sure_ot_ci.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  unit-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+      - name: Install focused test dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install torch --index-url https://download.pytorch.org/whl/cpu
+          python -m pip install pytest
+      - name: Compile changed Python modules
+        run: |
+          python -m py_compile evalcap/SURE_OT.py models/R2GenGPT.py configs/config.py
+      - name: Run SURE-OT tests
+        run: pytest -q tests/test_sure_ot.py
