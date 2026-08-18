@@ -1,0 +1,25 @@
+# Data and model weights
+data/
+save/
+*.pth
+*.pt
+*.ckpt
+*.bin
+*.safetensors
+
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+venv/
+
+# Logs and generated results
+*.log
+result/
+results/
+
+# IDE / OS
+.vscode/
+.idea/
+.DS_Store

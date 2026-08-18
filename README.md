@@ -1,43 +1,91 @@
-# BiOTPrompt: Bidirectional Optimal Transport Guided Prompting for Disease Evolution-aware Report Generation
+# SURE-OT
 
-## Introduction
-Radiology report generation (RRG) aims to automatically describe medical images via free-text reports. In clinical practice, comparing current and prior chest X-rays is essential for assessing disease progression, motivating the development of longitudinal RRG methods. However, most existing approaches often struggle to capture fine-grained temporal changes, as they often rely on unidirectional alignments or static reasoning pipelines, overlooking the bidirectional and asymmetric nature of disease evolution. To address these challenges, we propose BiOTPrompt, a novel framework for disease evolution-aware report generation, which introduces a Bidirectional Optimal Transport (BiOT) mechanism to explicitly model progression dynamics between historical and current chest X-rays. By analyzing the asymmetry between bidirectional transport plans, BiOTPrompt can identify newly emerged and resolved regions, which are then used to construct dynamic prompts that guide large language models (LLMs) in generating clinically relevant diagnostic reports. Furthermore, we incorporate a vision-language consistency constraint to ensure alignment between visual evidence and textual descriptions, mitigating hallucinations and enhancing factual accuracy. Extensive experiments on the Longitudinal-MIMIC dataset demonstrate that BiOTPrompt achieves state-of-the-art performance in both language quality metrics and clinical relevance, setting a new benchmark for longitudinal radiology report generation.
+**SURE-OT: Swap-Consistent Unbalanced Residual Evolution Prompting for Longitudinal Radiology Report Generation**
 
-## Getting Started
-### Installation
+This repository is a method-level extension of [BiOTPrompt](https://github.com/TengfeiLiu966/BiOTPrompt). It keeps the original Longitudinal-MIMIC data interface unchanged and replaces hard patch-index prompting with differentiable birth/resolution residual transport and continuous evolution tokens.
 
-**1. Prepare the code and the environment**
+## What changed
 
-Git clone our repository and install the requirements.
+SURE-OT adds four components:
+
+1. **Unbalanced optimal transport (UOT).** Relaxed marginals let current or historical patches remain partially unmatched instead of forcing every patch into a correspondence.
+2. **Birth/resolution residual maps.** Missing current-to-history mass indicates newly emerged evidence; missing history-to-current mass indicates resolved evidence.
+3. **Continuous evolution tokens.** Learnable queries pool new, resolved, persistent, and uncertain visual evidence directly into LLM-space prompt tokens.
+4. **Temporal swap consistency.** Reversing the current/history order provides annotation-free constraints: new in the forward direction should correspond to resolved in the reverse direction.
+
+The original BiOTPrompt path remains available with `--use_sure_ot False`.
+
+## Installation
 
 ```bash
-cd BiOTPrompt
+git clone https://github.com/redwangwangwang/SURE-OT.git
+cd SURE-OT
 pip install -r requirements.txt
 ```
 
-**2. Prepare the training dataset**
+Prepare Longitudinal-MIMIC exactly as required by the upstream BiOTPrompt repository. No new bounding boxes, masks, progression classes, or modified dataset files are required.
 
-Longitudinal-MIMIC: you can download this dataset from [here](https://github.com/CelestialShine/Longitudinal-Chest-X-Ray) and download the images from [official website](https://physionet.org/content/mimic-cxr-jpg/2.0.0/)
+## Training
 
-After downloading the data, place it in the ./data folder.
-
-### Training
+Edit the dataset/model paths in `scripts/7-1.sure_ot_run.sh`, then run:
 
 ```bash
-bash scripts/6-1.deep_run.sh
+bash scripts/7-1.sure_ot_run.sh
 ```
 
-### Testing (For MIMIC-CXR)
+## Testing
+
+Set `delta_file` in `scripts/7-2.sure_ot_test.sh`, then run:
 
 ```bash
-bash scripts/6-2.deep_test.sh
+bash scripts/7-2.sure_ot_test.sh
 ```
 
-## Acknowledgement
+## Main options
 
-+ [R2GenGPT](https://github.com/wang-zhanyu/R2GenGPT) Some codes of this repo are based on R2GenGPT.
-+ [Llama2](https://github.com/facebookresearch/llama) The fantastic language ability of Llama-2 with only 7B parameters is just amazing.
+```text
+--use_sure_ot True
+--sure_ot_num_tokens 2
+--sure_ot_epsilon 0.07
+--sure_ot_tau 0.7
+--sure_ot_iters 40
+--sure_ot_spatial_weight 0.05
+--sure_ot_use_swap True
+--lambda_sure_ot_swap 0.1
+--lambda_sure_ot_transport 0.01
+--lambda_sure_ot_reg 0.01
+```
 
+Useful ablations:
 
-## License
-This repository is under [BSD 3-Clause License](LICENSE.md).
+```bash
+# Original BiOTPrompt
+--use_sure_ot False
+
+# Balanced-OT control
+--sure_ot_balanced True
+
+# Remove temporal role adapters
+--sure_ot_use_role_adapters False
+
+# Remove swap consistency
+--sure_ot_use_swap False
+```
+
+## Verification
+
+The repository includes focused unit tests for numerical stability, unmatched-patch residual behavior, balanced-OT marginal degeneration, and gradient propagation:
+
+```bash
+pytest -q tests/test_sure_ot.py
+```
+
+These tests validate the implementation mechanics. They do not substitute for full training on Longitudinal-MIMIC, and this repository does not claim unrun benchmark results.
+
+## Method details
+
+See [`docs/METHOD.md`](docs/METHOD.md).
+
+## Acknowledgements and license
+
+The codebase is derived from BiOTPrompt and R2GenGPT. The upstream BSD 3-Clause license is retained in [`LICENSE`](LICENSE).

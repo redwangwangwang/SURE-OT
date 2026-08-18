@@ -28,6 +28,24 @@ parser.add_argument('--global_only', default=False, type=lambda x: (str(x).lower
 parser.add_argument('--low_resource', default=False, type=bool)
 parser.add_argument('--end_sym', default='</s>', type=str)
 
+# ========================= SURE-OT Settings ==========================
+parser.add_argument('--use_sure_ot', default=True, type=lambda x: (str(x).lower() == 'true'), help='enable SURE-OT; False restores the upstream BiOTPrompt path')
+parser.add_argument('--sure_ot_num_tokens', default=2, type=int, help='number of continuous tokens per evolution category')
+parser.add_argument('--sure_ot_epsilon', default=0.07, type=float, help='entropic UOT regularization')
+parser.add_argument('--sure_ot_tau', default=0.7, type=float, help='UOT marginal relaxation strength')
+parser.add_argument('--sure_ot_iters', default=40, type=int, help='number of generalized Sinkhorn iterations')
+parser.add_argument('--sure_ot_spatial_weight', default=0.05, type=float, help='patch-coordinate contribution to transport cost')
+parser.add_argument('--sure_ot_adapter_rank', default=128, type=int, help='bottleneck rank for temporal role adapters')
+parser.add_argument('--sure_ot_prior_strength', default=1.0, type=float, help='strength of residual priors in evolution-token attention')
+parser.add_argument('--sure_ot_residual_threshold', default=0.25, type=float, help='threshold used only for diagnostic hard masks')
+parser.add_argument('--sure_ot_balanced', default=False, type=lambda x: (str(x).lower() == 'true'), help='balanced-OT ablation; residual marginals should collapse')
+parser.add_argument('--sure_ot_use_role_adapters', default=True, type=lambda x: (str(x).lower() == 'true'), help='use direction-aware current/history adapters')
+parser.add_argument('--sure_ot_use_swap', default=True, type=lambda x: (str(x).lower() == 'true'), help='enable temporal swap consistency during training')
+parser.add_argument('--lambda_sure_ot_swap', default=0.1, type=float, help='weight of swap consistency')
+parser.add_argument('--lambda_sure_ot_transport', default=0.01, type=float, help='weight of the UOT objective')
+parser.add_argument('--lambda_sure_ot_reg', default=0.01, type=float, help='weight of residual sparsity and spatial regularization')
+
+
 # ======================== SavedModel Configs ===========================
 parser.add_argument('--savedmodel_path', type=str, default="./save/$dataset/$version")
 parser.add_argument('--ckpt_file', type=str, default=None, help='the checkpoint file to load')
