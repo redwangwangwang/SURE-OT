@@ -1,0 +1,32 @@
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Environments
+.venv/
+venv/
+env/
+
+# Training artifacts
+save/
+logs/
+lightning_logs/
+*.ckpt
+*.pth
+*.pt
+*.bin
+*.safetensors
+
+# Local datasets and pretrained weights
+data/
+
+# Downloaded evaluation binary
+evalcap/meteor/meteor-1.5.jar
+
+# Editors / OS
+.vscode/
+.idea/
+.DS_Store
